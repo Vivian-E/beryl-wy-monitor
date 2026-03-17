@@ -45,7 +45,6 @@ legend_palette <- c(
 )
 
 # --- 2. UI DESIGN ---
-
 ui <- page_navbar(
   title = "Beryl West Yorkshire Monitor",
   theme = bs_theme(version = 5, bootswatch = "minty"),
@@ -111,8 +110,24 @@ ui <- page_navbar(
               card_header("Station Statistics (Sorted by Bikes Available)"), 
               DTOutput("analysis_table")
             )
+  ),
+  
+  # MOVED INSIDE page_navbar
+  nav_panel("Historical Trends",
+            layout_columns(
+              card(
+                card_header("Total Bike Availability Over Time"),
+                plotlyOutput("history_plot")
+              ),
+              card(
+                card_header("Rollout Progress (Active Stations)"),
+                plotlyOutput("station_history_plot")
+              )
+            )
   )
 )
+
+
 
 # --- 3. SERVER LOGIC ---
 
@@ -161,6 +176,21 @@ server <- function(input, output, session) {
                                    }
   )
   
+  
+  # Load the history file from GitHub (so it stays updated on the web)
+  history_df <- reactive({
+    # Replace YOUR_USERNAME and YOUR_REPO with your actual GitHub details
+    url <- "https://raw.githubusercontent.com/Vivian-E/beryl-wy-monitor/main/data/beryl_history.csv"
+    
+    # Use tryCatch so the app doesn't crash if it can't reach GitHub
+    tryCatch({
+      read_csv(url)
+    }, error = function(e) {
+      # Fallback to local file if URL fails
+      if(file.exists("data/beryl_history.csv")) read_csv("data/beryl_history.csv") else NULL
+    })
+  })
+  
   # Reactives
   filtered_df <- reactive({ 
     req(live_data_bundle())
@@ -193,6 +223,35 @@ server <- function(input, output, session) {
     if(total_planned == 0) return("0%")
     paste0(round((sum(filtered_df()$is_active) / total_planned) * 100, 1), "%")
   })
+  
+  output$history_plot <- renderPlotly({
+    req(history_df())
+    p <- history_df() %>%
+      filter(city %in% input$city_select) %>%
+      ggplot(aes(x = date, y = total_bikes, color = city)) +
+      geom_line(size = 1) +
+      geom_point() +
+      scale_color_brewer(palette = "Set2") +
+      labs(y = "Bikes Available", x = "Date") +
+      theme_minimal()
+    
+    ggplotly(p)
+  })
+  
+  
+  output$station_history_plot <- renderPlotly({
+    req(history_df())
+    p <- history_df() %>%
+      filter(city %in% input$city_select) %>%
+      ggplot(aes(x = date, y = active_stations, color = city)) +
+      geom_step(size = 1) + # Use a step plot to show infrastructure changes
+      scale_color_brewer(palette = "Set1") +
+      labs(y = "Active Stations", x = "Date") +
+      theme_minimal()
+    
+    ggplotly(p)
+  })
+  
   
   # --- Map ---
   output$map <- renderLeaflet({
