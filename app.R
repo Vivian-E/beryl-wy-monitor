@@ -1,3 +1,5 @@
+# Libraries
+library(rsconnect)
 library(pdftools)
 library(rvest)
 library(tidyverse)
@@ -112,7 +114,6 @@ ui <- page_navbar(
             )
   ),
   
-  # MOVED INSIDE page_navbar
   nav_panel("Historical Trends",
             layout_columns(
               card(
@@ -125,9 +126,7 @@ ui <- page_navbar(
               )
             )
   )
-)
-
-
+) 
 
 # --- 3. SERVER LOGIC ---
 
