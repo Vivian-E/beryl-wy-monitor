@@ -171,3 +171,5 @@ date,city,total_bikes,active_stations,total_capacity
 2026-06-10,Bradford,54,32,219
 2026-06-11,Leeds,302,78,780
 2026-06-11,Bradford,56,32,219
+2026-06-12,Leeds,300,78,780
+2026-06-12,Bradford,66,32,219
